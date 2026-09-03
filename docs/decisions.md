@@ -4,6 +4,9 @@ Format: Date — Decision — Why / trade-off
 
 ---
 
+**2026-09-03** — Bronze→Silver uses a quarantine pattern, not row-dropping. Bronze retains all raw rows unfiltered. Rows that pass structural checks (resolvable entity, valid/correctable timestamp, valid types) move to Silver. Rows that fail move to a `_quarantine` table — preserved, not deleted, for human investigation of root cause. DLT expectations mostly use `warn` (log + keep, after correction) rather than `drop`; a small subset of unrecoverable failures (e.g. entity_id unresolvable against dim_entity) route to quarantine instead of Silver, since an event that can't be attached to an entity can't be scored — but it is never deleted.
+Why: reflects real-world constraint that signal must not be lost alongside noise — an anomalous event that's also malformed must still surface, not silently vanish with a dropped row.
+
 **2026-09-03** — Use Structured Streaming with a synthetic rate source for ingestion, feeding a landing zone that Auto Loader reads into Bronze — rather than a plain script writing files directly.
 Why: exercises real streaming semantics (watermarks, checkpointing) while keeping Auto Loader in the pipeline story.
 
