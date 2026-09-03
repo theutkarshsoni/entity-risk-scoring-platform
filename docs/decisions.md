@@ -4,6 +4,9 @@ Format: Date — Decision — Why / trade-off
 
 ---
 
+**2026-09-03** — `login_events` retains `source_country` as a direct field from the generator, rather than deriving it via a separate IP-to-country enrichment step in Silver.
+Why: whether an auth system logs geolocation directly or only raw IP varies by real-world system maturity (e.g. Okta/Azure AD enrich at capture; simpler in-house systems don't) — both are defensible. Since entity resolution (system_identifier → entity_id) already forces a genuine lookup/join in Silver, an IP-geo enrichment step would duplicate that skill rather than add a new one, so it wasn't worth the added dependency it would create for impossible-travel scoring.
+
 **2026-09-03** — Data generation split into two distinct phases: an 8-month historical backfill (Jan 1 – Aug 31, 2026), generated once as a batch job, used for exploration and calibrating scoring logic; and live streaming generation (Sep 1, 2026 onward) via rate source + AvailableNow trigger, treated as held-out test data to validate the pipeline/model against unseen data — analogous to a train/test split.
 Final parameters: 100 entities (70 human / 20 service_account / 10 agent), 10% dirty-data rate, 5% anomaly rate (both tunable), JSON landing format.
 
