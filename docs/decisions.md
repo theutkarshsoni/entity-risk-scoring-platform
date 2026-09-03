@@ -4,6 +4,9 @@ Format: Date — Decision — Why / trade-off
 
 ---
 
+**2026-09-03** — Data generation split into two distinct phases: an 8-month historical backfill (Jan 1 – Aug 31, 2026), generated once as a batch job, used for exploration and calibrating scoring logic; and live streaming generation (Sep 1, 2026 onward) via rate source + AvailableNow trigger, treated as held-out test data to validate the pipeline/model against unseen data — analogous to a train/test split.
+Final parameters: 100 entities (70 human / 20 service_account / 10 agent), 10% dirty-data rate, 5% anomaly rate (both tunable), JSON landing format.
+
 **2026-09-03** — Bronze→Silver uses a quarantine pattern, not row-dropping. Bronze retains all raw rows unfiltered. Rows that pass structural checks (resolvable entity, valid/correctable timestamp, valid types) move to Silver. Rows that fail move to a `_quarantine` table — preserved, not deleted, for human investigation of root cause. DLT expectations mostly use `warn` (log + keep, after correction) rather than `drop`; a small subset of unrecoverable failures (e.g. entity_id unresolvable against dim_entity) route to quarantine instead of Silver, since an event that can't be attached to an entity can't be scored — but it is never deleted.
 Why: reflects real-world constraint that signal must not be lost alongside noise — an anomalous event that's also malformed must still surface, not silently vanish with a dropped row.
 
