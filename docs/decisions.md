@@ -4,6 +4,9 @@ Format: Date — Decision — Why / trade-off
 
 ---
 
+**2026-09-04** — Anomaly and dirty-data rates are no longer fixed (originally 5%/10%). Rates are now randomized hierarchically: a month-level base rate drawn from a Beta distribution (skewed low, occasionally elevated) within range (anomaly 0-10%, dirty 0-20%), with day-level rates jittered around that month's base and clipped to range. Each event independently applies that day's resolved rate. Live streaming reuses the calendar day's rate across all runs that day, rather than adding a third randomization level.
+Why: a fixed rate doesn't mirror real-world clustering (bad weeks/months vs. quiet periods); the hierarchical approach produces natural elevated periods without manually scripting them, while staying simple — two levels, not three.
+
 **2026-09-03** — `login_events` retains `source_country` as a direct field from the generator, rather than deriving it via a separate IP-to-country enrichment step in Silver.
 Why: whether an auth system logs geolocation directly or only raw IP varies by real-world system maturity (e.g. Okta/Azure AD enrich at capture; simpler in-house systems don't) — both are defensible. Since entity resolution (system_identifier → entity_id) already forces a genuine lookup/join in Silver, an IP-geo enrichment step would duplicate that skill rather than add a new one, so it wasn't worth the added dependency it would create for impossible-travel scoring.
 
