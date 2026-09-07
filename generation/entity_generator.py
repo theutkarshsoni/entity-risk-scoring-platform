@@ -57,11 +57,11 @@ generate_entities("service_account", 21, non_human_roles, non_human_role_weights
 # Generate agent entities
 generate_entities("agent", 11, non_human_roles, non_human_role_weights, non_human_tiers, non_human_tier_weights, None, None, None)
 
-df = spark.createDataFrame(new_entity_list)
-df.show()
+entity_df = spark.createDataFrame(new_entity_list)
+entity_df.show()
 
 # Create catalog and schema if they don't exist
 spark.sql("CREATE CATALOG IF NOT EXISTS entity_risk_platform")
 spark.sql("CREATE SCHEMA IF NOT EXISTS entity_risk_platform.seed_data")
 
-df.write.format("delta").mode("overwrite").saveAsTable("entity_risk_platform.seed_data.entities")
+entity_df.write.format("delta").mode("overwrite").saveAsTable("entity_risk_platform.seed_data.entities")
