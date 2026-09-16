@@ -145,6 +145,9 @@ Auth system.
 | login_result | string | success / failure |
 | source_device | string | e.g. "Windows/Chrome", "iOS/Safari" |
 
+**Normal-mode logic:** Country rolled once per day (85% home / 15% the entity's one allowed travel country) — all that day's logins share it, guaranteeing a normal day never exceeds 2 distinct countries. Frequency: weekday 1-3, weekend 0-1. Timing: 8am-6pm home-country timezone regardless of which country the login is attributed to. source_device weighted across common combos; login_result ~95% success; mfa_used ~90% true; vpn_detected ~97% false.
+
+
 ### `file_access_events`
 File/data system.
 
@@ -156,6 +159,9 @@ File/data system.
 | access_timestamp | timestamp | |
 | action | string | read / write / download |
 | data_volume_mb | float | Enables both count-based and volume-based anomaly detection (many-small vs few-large) |
+
+**Normal-mode logic:** Resource randomly chosen from the entity's actual `access_grants`. Frequency: Human weekday 10-15, weekend 0-5; service_account by activity_pattern (scheduled=5, always_on=5-10, triggered=1-5); agent by tier (Fully-autonomous 10-15, Semi-autonomous 5-10, Supervised 0-5). Timing: human — working-hours window; non-human — random all day. Action: read 75% / write 20% / download 5%. data_volume_mb: read=0, write=uniform(5,50), download=uniform(50,100).
+
 
 ### `privileged_command_events`
 Admin/ops system.
@@ -170,6 +176,9 @@ Admin/ops system.
 | resource_id | string (FK → resources), nullable | Populated only when target is a catalog resource |
 | target_description | string, nullable | Free text, used when target isn't a catalog resource (e.g. "entity:E047 permissions", "deployment_server") |
 
+**Normal-mode logic:** Frequency: Human 0/1/2 weighted 0.75/0.20/0.05; ci-cd 1-4, security-scanning 1-3, backup-automation 1-2. Category weighting: Human uniform across all 6; ci-cd service_control 50%/config_change 40%/data_deletion 10%; security-scanning log_management 40%/access_control 40%/user_management 20%; backup-automation data_deletion 40%/config_change 30%/log_management 30%. 18-command pool (3 per category), each fixed to a specific resource_id or a target_description template; the 3 permission-related commands substitute a random other entity_id at generation time. Timing: same human/non-human split as other tables.
+
+
 ### `network_access_events`
 VPN/network system. Represents external egress — the second link in an exfiltration chain (large internal download → external transfer).
 
@@ -182,6 +191,8 @@ VPN/network system. Represents external egress — the second link in an exfiltr
 | destination_ip | string | |
 | destination_system | string | Internal system name, or external label (e.g. "external_cloud_storage", "personal_email", "unknown_external") |
 | bytes_transferred | float | |
+
+**Normal-mode logic:** Frequency: Human 0-10; non-human by tier — Supervised 0-6, Semi-autonomous 0-4, Fully-autonomous 0-2 (intentionally reversed vs. file_access_events' autonomy pattern — see decisions log). Destination: 90% internal (auth_system 10%/file_storage_system 30%/admin_system 20%/internal_network 40%) / 10% external (external_cloud_storage 60%/personal_email 25%/unknown_external 15%). bytes_transferred: internal=uniform(1,50), external=uniform(50,100). Timing: same as other tables.
 
 ---
 
